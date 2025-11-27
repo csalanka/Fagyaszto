@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>🧊 Fagyasztó Kezelő</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --border: #e0e0e0;
+            --fiok1: #4caf50;
+            --fiok2: #ff9800;
+            --fiok3: #2196f3;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --success: #4caf50;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #333;
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Filters */
+        .filters {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+
+        /* Item List */
+        .item-list {
+            padding: 8px;
+        }
+
+        .item-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--border);
+            position: relative;
+        }
+
+        .item-card.fiok1 { border-left-color: var(--fiok1); }
+        .item-card.fiok2 { border-left-color: var(--fiok2); }
+        .item-card.fiok3 { border-left-color: var(--fiok3); }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .item-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .item-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .item-date {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .date-expired {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        .date-warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .date-ok {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-card {
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .stat-card.fiok1 .stat-value { color: var(--fiok1); }
+        .stat-card.fiok2 .stat-value { color: var(--fiok2); }
+        .stat-card.fiok3 .stat-value { color: var(--fiok3); }
+
+        /* CSV Actions */
+        .csv-actions {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .csv-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        #csvFileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- Header -->
+    <div class="header">
+        <h1>🧊 Fagyasztó</h1>
+        <div class="header-actions">
+            <button class="icon-btn" id="themeToggle">🌙</button>
+            <button class="icon-btn" id="menuBtn">⋮</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="stats">
+        <div class="stat-card fiok1">
+            <div class="stat-value" id="stat1">0</div>
+            <div class="stat-label">Zöldség/Gyümölcs</div>
+        </div>
+        <div class="stat-card fiok2">
+            <div class="stat-value" id="stat2">0</div>
+            <div class="stat-label">Hús/Hal</div>
+        </div>
+        <div class="stat-card fiok3">
+            <div class="stat-value" id="stat3">0</div>
+            <div class="stat-label">Tejtermék/Egyéb</div>
+        </div>
+    </div>
+
+    <!-- CSV Actions -->
+    <div class="csv-actions">
+        <button class="csv-btn" id="exportBtn">
+            📤 Export CSV
+        </button>
+        <button class="csv-btn" id="importBtn">
+            📥 Import CSV
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv">
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <div class="filter-row">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Keresés...">
+        </div>
+        <div class="filter-row" style="overflow-x: auto; white-space: nowrap;">
+            <button class="filter-btn active" data-filter="all">Összes</button>
+            <button class="filter-btn" data-filter="fiok1">🌳 1-es</button>
+            <button class="filter-btn" data-filter="fiok2">🥩 2-es</button>
+            <button class="filter-btn" data-filter="fiok3">🍦 3-as</button>
+            <button class="filter-btn" data-filter="expired">⚠️ Lejárt</button>
+            <button class="filter-btn" data-filter="warning">🟡 Közeli</button>
+            <button class="filter-btn" data-filter="opened">📦 Bontott</button>
+        </div>
+    </div>
+
+    <!-- Item List -->
+    <div class="item-list" id="itemList">
+        <div class="empty-state">
+            <div class="empty-state-icon">🧊</div>
+            <p>Nincs még termék</p>
+            <p style="font-size: 13px; margin-top: 8px;">Nyomd meg a + gombot!</p>
+        </div>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" id="addBtn">+</button>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Új termék</div>
+                <button class="icon-btn" id="closeModal">✕</button>
+            </div>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label class="form-label">Termék neve *</label>
+                    <input type="text" class="form-input" id="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fiók *</label>
+                    <select class="form-select" id="itemFiok" required>
+                        <option value="1">🌳 1-es - Zöldség/Gyümölcs/Pékáru</option>
+                        <option value="2">🥩 2-es - Hús/Hal</option>
+                        <option value="3">🍦 3-as - Tejtermék/Desszert/Egyéb</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Lejárati dátum</label>
+                    <input type="date" class="form-input" id="itemExpiry">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Megjegyzés</label>
+                    <textarea class="form-textarea" id="itemNote"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Mégse</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Mentés</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data Store
+        let items = [];
+        let editingId = null;
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        themeToggle.addEventListener('click', () => {
+            const current = body.getAttribute('data-theme');
+            const newTheme = current === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            themeToggle.textContent = newTheme === 'light' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Load theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        body.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+
+        // Modal
+        const modal = document.getElementById('itemModal');
+        const addBtn = document.getElementById('addBtn');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const itemForm = document.getElementById('itemForm');
+
+        addBtn.addEventListener('click', () => openModal());
+        closeModal.addEventListener('click', () => modal.classList.remove('active'));
+        cancelBtn.addEventListener('click', () => modal.classList.remove('active'));
+
+        function openModal(item = null) {
+            editingId = item ? item.id : null;
+            document.getElementById('modalTitle').textContent = item ? 'Termék szerkesztése' : 'Új termék';
+            
+            if (item) {
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemFiok').value = item.fiok;
+                document.getElementById('itemExpiry').value = item.expiry || '';
+                document.getElementById('itemNote').value = item.note || '';
+            } else {
+                itemForm.reset();
+            }
+            
+            modal.classList.add('active');
+        }
+
+        // Form Submit
+        itemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const itemData = {
+                id: editingId || Date.now(),
+                name: document.getElementById('itemName').value.trim(),
+                fiok: document.getElementById('itemFiok').value,
+                expiry: document.getElementById('itemExpiry').value || null,
+                note: document.getElementById('itemNote').value.trim(),
+                created: editingId ? items.find(i => i.id === editingId).created : new Date().toISOString(),
+                modified: new Date().toISOString()
+            };
+
+            if (editingId) {
+                items = items.map(i => i.id === editingId ? itemData : i);
+            } else {
+                items.push(itemData);
+            }
+
+            saveData();
+            renderItems();
+            modal.classList.remove('active');
+        });
+
+        // Delete Item
+        function deleteItem(id) {
+            if (confirm('Biztosan törlöd ezt a tételt?')) {
+                items = items.filter(i => i.id !== id);
+                saveData();
+                renderItems();
+            }
+        }
+
+        // Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.getAttribute('data-filter');
+                renderItems();
+            });
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderItems();
+        });
+
+        // Get Expiry Status
+        function getExpiryStatus(expiry) {
+            if (!expiry) return 'unknown';
+            
+            const today = new Date();
+            const expiryDate = new Date(expiry);
+            const diffDays = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return 'expired';
+            if (diffDays <= 30) return 'warning';
+            return 'ok';
+        }
+
+        // Format Date
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Nincs megadva';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('hu-HU');
+        }
+
+        // Render Items
+        function renderItems() {
+            const itemList = document.getElementById('itemList');
+            
+            let filtered = items.filter(item => {
+                // Search filter
+                if (searchQuery && !item.name.toLowerCase().includes(searchQuery)) {
+                    return false;
+                }
+
+                // Category filter
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'fiok1') return item.fiok === '1';
+                if (currentFilter === 'fiok2') return item.fiok === '2';
+                if (currentFilter === 'fiok3') return item.fiok === '3';
+                if (currentFilter === 'expired') return getExpiryStatus(item.expiry) === 'expired';
+                if (currentFilter === 'warning') return getExpiryStatus(item.expiry) === 'warning';
+                if (currentFilter === 'opened') return item.note && item.note.toLowerCase().includes('bontott');
+
+                return true;
+            });
+
+            // Sort by expiry date
+            filtered.sort((a, b) => {
+                if (!a.expiry) return 1;
+                if (!b.expiry) return -1;
+                return new Date(a.expiry) - new Date(b.expiry);
+            });
+
+            if (filtered.length === 0) {
+                itemList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Nincs találat</p>
+                    </div>
+                `;
+            } else {
+                itemList.innerHTML = filtered.map(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    const fiokIcons = { '1': '🌳', '2': '🥩', '3': '🍦' };
+                    
+                    return `
+                        <div class="item-card fiok${item.fiok}">
+                            <div class="item-header">
+                                <div class="item-name">${fiokIcons[item.fiok]} ${item.name}</div>
+                                <div class="item-actions">
+                                    <button class="item-btn" onclick="openModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">✏️</button>
+                                    <button class="item-btn" onclick="deleteItem(${item.id})">🗑️</button>
+                                </div>
+                            </div>
+                            ${item.note ? `<div class="item-info">💬 ${item.note}</div>` : ''}
+                            ${item.expiry ? `<div class="item-date date-${status}">📅 ${formatDate(item.expiry)}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateStats();
+        }
+
+        // Update Stats
+        function updateStats() {
+            const stat1 = items.filter(i => i.fiok === '1').length;
+            const stat2 = items.filter(i => i.fiok === '2').length;
+            const stat3 = items.filter(i => i.fiok === '3').length;
+
+            document.getElementById('stat1').textContent = stat1;
+            document.getElementById('stat2').textContent = stat2;
+            document.getElementById('stat3').textContent = stat3;
+        }
+
+        // CSV Export
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (items.length === 0) {
+                alert('Nincs exportálható adat!');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const headers = ['ID', 'Termék', 'Fiók', 'Lejárat', 'Megjegyzés', 'Létrehozva', 'Módosítva'];
+            const rows = items.map(item => [
+                item.id,
+                item.name,
+                item.fiok,
+                item.expiry || '',
+                item.note || '',
+                item.created,
+                item.modified
+            ]);
+
+            const csv = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `fagyaszto_${timestamp}.csv`;
+            link.click();
+        });
+
+        // CSV Import
+        document.getElementById('importBtn').addEventListener('click', () => {
+            document.getElementById('csvFileInput').click();
+        });
+
+        document.getElementById('csvFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n').filter(line => line.trim());
+                    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+                    
+                    const imported = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+                        imported.push({
+                            id: parseInt(values[0]) || Date.now() + i,
+                            name: values[1],
+                            fiok: values[2],
+                            expiry: values[3] || null,
+                            note: values[4] || '',
+                            created: values[5] || new Date().toISOString(),
+                            modified: values[6] || new Date().toISOString()
+                        });
+                    }
+
+                    if (confirm(`${imported.length} tétel importálása?\nA meglévő adatok felülíródnak!`)) {
+                        items = imported;
+                        saveData();
+                        renderItems();
+                        alert('Sikeres importálás!');
+                    }
+                } catch (error) {
+                    alert('Hiba az importálás során!');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            e.target.value = '';
+        });
+
+        // Local Storage
+        function saveData() {
+            localStorage.setItem('fagyasztoItems', JSON.stringify(items));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('fagyasztoItems');
+            if (saved) {
+                items = JSON.parse(saved);
+                renderItems();
+            }
+        }
+
+        // Menu
+        document.getElementById('menuBtn').addEventListener('click', () => {
+            const actions = [
+                'Összes adat törlése',
+                'Mégse'
+            ];
+            
+            const choice = confirm('Biztosan törölsz MINDEN adatot? Ez nem visszavonható!');
+            if (choice) {
+                items = [];
+                saveData();
+                renderItems();
+                alert('Minden adat törölve!');
+            }
+        });
+
+        // Init
+        loadData();
+    </script>
+</body>
+</html>
