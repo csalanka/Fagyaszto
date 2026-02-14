@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2196f3">
+    <title>🧊 Fagyasztó Kezelő</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --border: #e0e0e0;
+            --blue: #2196f3;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --success: #4caf50;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #333;
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        html {
+            position: fixed;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height */
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            padding-bottom: env(safe-area-inset-bottom);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-card {
+            padding: 8px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+
+        .stat-card.active {
+            background: var(--blue);
+        }
+
+        .stat-card.active .stat-label,
+        .stat-card.active .stat-value {
+            color: white !important;
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: #4caf50; }
+        .stat-card:nth-child(2) .stat-value { color: #f44336; }
+        .stat-card:nth-child(3) .stat-value { color: #2196f3; }
+        .stat-card:nth-child(4) .stat-value { color: #9c27b0; }
+        .stat-card:nth-child(5) .stat-value { color: #ff9800; }
+        .stat-card:nth-child(6) .stat-value { color: #607d8b; }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* CSV Actions */
+        .csv-actions {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .csv-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        #csvItemsInput, #csvDrawersInput {
+            display: none;
+        }
+
+        /* Filters */
+        .filters {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        .filter-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Item List */
+        .item-list {
+            padding: 8px;
+            padding-bottom: 80px; /* FAB + extra hely */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            height: calc(100vh - 390px); /* Header + Stats + 2x CSV + Filters (1 sor) */
+            height: calc(100dvh - 390px);
+        }
+
+        .item-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--blue);
+        }
+
+        .item-card[data-type="zoldseg"] { border-left-color: #4caf50; }
+        .item-card[data-type="hus"] { border-left-color: #f44336; }
+        .item-card[data-type="hal"] { border-left-color: #2196f3; }
+        .item-card[data-type="tejtermek"] { border-left-color: #9c27b0; }
+        .item-card[data-type="pekaru"] { border-left-color: #ff9800; }
+        .item-card[data-type="egyeb"] { border-left-color: #607d8b; }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .item-location {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .item-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .item-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .item-date {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .date-expired {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        .date-warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .date-ok {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--blue);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        /* Drawer Editor */
+        .drawer-section {
+            margin-bottom: 24px;
+        }
+
+        .drawer-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .drawer-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .drawer-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 40px;
+        }
+
+        .drawer-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- Header -->
+    <div class="header">
+        <h1>🧊 Fagyasztó Kezelő</h1>
+        <div class="header-actions">
+            <button class="icon-btn" id="fullscreenBtn">⛶</button>
+            <button class="icon-btn" id="themeToggle">🌙</button>
+            <button class="icon-btn" id="settingsBtn">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-card" data-filter="zoldseg">
+            <div class="stat-icon">🥬</div>
+            <div class="stat-value" id="stat1">0</div>
+            <div class="stat-label">Zöldség</div>
+        </div>
+        <div class="stat-card" data-filter="hus">
+            <div class="stat-icon">🥩</div>
+            <div class="stat-value" id="stat2">0</div>
+            <div class="stat-label">Hús</div>
+        </div>
+        <div class="stat-card" data-filter="hal">
+            <div class="stat-icon">🐟</div>
+            <div class="stat-value" id="stat3">0</div>
+            <div class="stat-label">Hal</div>
+        </div>
+        <div class="stat-card" data-filter="tejtermek">
+            <div class="stat-icon">🍰</div>
+            <div class="stat-value" id="stat4">0</div>
+            <div class="stat-label">Desszert</div>
+        </div>
+        <div class="stat-card" data-filter="pekaru">
+            <div class="stat-icon">🥖</div>
+            <div class="stat-value" id="stat5">0</div>
+            <div class="stat-label">Pékáru</div>
+        </div>
+        <div class="stat-card" data-filter="egyeb">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value" id="stat6">0</div>
+            <div class="stat-label">Egyéb</div>
+        </div>
+    </div>
+
+    <!-- CSV Actions -->
+    <div class="csv-actions">
+        <button class="csv-btn" id="exportItemsBtn">
+            📤 Tételek
+        </button>
+        <button class="csv-btn" id="importItemsBtn">
+            📥 Tételek
+        </button>
+        <input type="file" id="csvItemsInput" accept=".csv">
+    </div>
+    <div class="csv-actions" style="padding-top: 0;">
+        <button class="csv-btn" id="exportDrawersBtn">
+            📤 Fióknevek
+        </button>
+        <button class="csv-btn" id="importDrawersBtn">
+            📥 Fióknevek
+        </button>
+        <input type="file" id="csvDrawersInput" accept=".csv">
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <div class="filter-row">
+            <button class="filter-btn active" id="filterAll">Összes</button>
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Keresés...">
+        </div>
+    </div>
+
+    <!-- Item List -->
+    <div class="item-list" id="itemList">
+        <div class="empty-state">
+            <div class="empty-state-icon">🧊</div>
+            <p>Nincs még termék</p>
+            <p style="font-size: 13px; margin-top: 8px;">Nyomd meg a + gombot!</p>
+        </div>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" id="addBtn">+</button>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Új termék</div>
+                <button class="icon-btn" id="closeModal">✕</button>
+            </div>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label class="form-label">Fagyasztó *</label>
+                    <select class="form-select" id="itemFagyaszto" required>
+                        <option value="">Válassz fagyasztót</option>
+                        <option value="Fagyasztó 1">Fagyasztó 1</option>
+                        <option value="Fagyasztó 2">Fagyasztó 2</option>
+                        <option value="Fagyasztó 3">Fagyasztó 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fiók *</label>
+                    <select class="form-select" id="itemFiok" required>
+                        <option value="">Először válassz fagyasztót</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Típus *</label>
+                    <select class="form-select" id="itemType" required>
+                        <option value="zoldseg">🥬 Zöldség/Gyümölcs</option>
+                        <option value="hus">🥩 Hús</option>
+                        <option value="hal">🐟 Hal</option>
+                        <option value="tejtermek">🍰 Tejtermék/Desszert</option>
+                        <option value="pekaru">🥖 Pékáru</option>
+                        <option value="egyeb">📦 Egyéb</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Termék neve *</label>
+                    <input type="text" class="form-input" id="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Lejárati dátum</label>
+                    <input type="date" class="form-input" id="itemExpiry">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leírás</label>
+                    <textarea class="form-textarea" id="itemNote"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Mégse</button>
+                    <button type="submit" class="btn btn-primary">Mentés</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Drawer Names Editor) -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">⚙️ Fiók nevek szerkesztése</div>
+                <button class="icon-btn" id="closeSettings">✕</button>
+            </div>
+            <div id="drawerEditor"></div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-danger" id="deleteAllData" style="flex: 0 0 auto;">🗑️ Tételek törlése</button>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelSettings">Mégse</button>
+                <button type="button" class="btn btn-primary" id="saveSettings">Mentés</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default drawer names
+        const DEFAULT_DRAWERS = {
+            'Fagyasztó 1': ['F1A', 'F1B', 'F1C', 'F1D', 'F1E', 'F1F'],
+            'Fagyasztó 2': ['F2A', 'F2B', 'F2C', 'F2D', 'F2E', 'F2F'],
+            'Fagyasztó 3': ['F3A', 'F3B', 'F3C', 'F3D', 'F3E', 'F3F']
+        };
+
+        // Data Store
+        let items = [];
+        let drawerNames = JSON.parse(JSON.stringify(DEFAULT_DRAWERS));
+        let editingId = null;
+        let searchQuery = '';
+        let filterType = '';
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        themeToggle.addEventListener('click', () => {
+            const current = body.getAttribute('data-theme');
+            const newTheme = current === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            themeToggle.textContent = newTheme === 'light' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Load theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        body.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+
+        // Fullscreen Toggle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen hiba:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Update icon when fullscreen changes
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenBtn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+        });
+
+        // Item Modal
+        const itemModal = document.getElementById('itemModal');
+        const addBtn = document.getElementById('addBtn');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const itemForm = document.getElementById('itemForm');
+        const itemFagyaszto = document.getElementById('itemFagyaszto');
+        const itemFiok = document.getElementById('itemFiok');
+
+        addBtn.addEventListener('click', () => openItemModal());
+        closeModal.addEventListener('click', () => itemModal.classList.remove('active'));
+        cancelBtn.addEventListener('click', () => itemModal.classList.remove('active'));
+
+        // Update fiok dropdown when fagyaszto changes
+        itemFagyaszto.addEventListener('change', () => {
+            const selected = itemFagyaszto.value;
+            itemFiok.innerHTML = '<option value="">Válassz fiókot</option>';
+            
+            if (selected && drawerNames[selected]) {
+                drawerNames[selected].forEach(drawer => {
+                    const option = document.createElement('option');
+                    option.value = drawer;
+                    option.textContent = drawer;
+                    itemFiok.appendChild(option);
+                });
+            }
+        });
+
+        function openItemModal(item = null) {
+            editingId = item ? item.id : null;
+            document.getElementById('modalTitle').textContent = item ? 'Termék szerkesztése' : 'Új termék';
+            
+            if (item) {
+                itemFagyaszto.value = item.fagyaszto;
+                itemFagyaszto.dispatchEvent(new Event('change'));
+                setTimeout(() => {
+                    itemFiok.value = item.fiok;
+                    document.getElementById('itemType').value = item.type || 'zoldseg';
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemExpiry').value = item.expiry || '';
+                    document.getElementById('itemNote').value = item.note || '';
+                }, 0);
+            } else {
+                itemForm.reset();
+                itemFiok.innerHTML = '<option value="">Először válassz fagyasztót</option>';
+            }
+            
+            itemModal.classList.add('active');
+        }
+
+        // Form Submit
+        itemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const itemData = {
+                id: editingId || Date.now(),
+                fagyaszto: itemFagyaszto.value,
+                fiok: itemFiok.value,
+                type: document.getElementById('itemType').value,
+                name: document.getElementById('itemName').value.trim(),
+                expiry: document.getElementById('itemExpiry').value || null,
+                note: document.getElementById('itemNote').value.trim(),
+                created: editingId ? items.find(i => i.id === editingId).created : new Date().toISOString(),
+                modified: new Date().toISOString()
+            };
+
+            if (editingId) {
+                items = items.map(i => i.id === editingId ? itemData : i);
+            } else {
+                items.push(itemData);
+            }
+
+            saveData();
+            renderItems();
+            itemModal.classList.remove('active');
+        });
+
+        // Delete Item
+        function deleteItem(id) {
+            if (confirm('Biztosan törlöd ezt a tételt?')) {
+                items = items.filter(i => i.id !== id);
+                saveData();
+                renderItems();
+            }
+        }
+
+        // Settings Modal
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const closeSettings = document.getElementById('closeSettings');
+        const cancelSettings = document.getElementById('cancelSettings');
+        const saveSettings = document.getElementById('saveSettings');
+        const drawerEditor = document.getElementById('drawerEditor');
+
+        settingsBtn.addEventListener('click', openSettings);
+        closeSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
+        cancelSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
+        saveSettings.addEventListener('click', saveDrawerNames);
+
+        function openSettings() {
+            renderDrawerEditor();
+            settingsModal.classList.add('active');
+        }
+
+        function renderDrawerEditor() {
+            drawerEditor.innerHTML = '';
+            
+            Object.keys(drawerNames).forEach(fagyaszto => {
+                const section = document.createElement('div');
+                section.className = 'drawer-section';
+                
+                const title = document.createElement('div');
+                title.className = 'drawer-section-title';
+                title.textContent = `═══ ${fagyaszto} ═══`;
+                section.appendChild(title);
+                
+                drawerNames[fagyaszto].forEach((drawer, index) => {
+                    const group = document.createElement('div');
+                    group.className = 'drawer-input-group';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'drawer-label';
+                    label.textContent = DEFAULT_DRAWERS[fagyaszto][index] + ':';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'drawer-input';
+                    input.value = drawer;
+                    input.dataset.fagyaszto = fagyaszto;
+                    input.dataset.index = index;
+                    
+                    group.appendChild(label);
+                    group.appendChild(input);
+                    section.appendChild(group);
+                });
+                
+                drawerEditor.appendChild(section);
+            });
+        }
+
+        function saveDrawerNames() {
+            const inputs = drawerEditor.querySelectorAll('.drawer-input');
+            const newNames = JSON.parse(JSON.stringify(DEFAULT_DRAWERS));
+            
+            inputs.forEach(input => {
+                const fagyaszto = input.dataset.fagyaszto;
+                const index = parseInt(input.dataset.index);
+                const value = input.value.trim() || DEFAULT_DRAWERS[fagyaszto][index];
+                newNames[fagyaszto][index] = value;
+            });
+            
+            drawerNames = newNames;
+            saveData();
+            renderItems();
+            settingsModal.classList.remove('active');
+        }
+
+        // Delete all items (but keep drawer names)
+        document.getElementById('deleteAllData').addEventListener('click', () => {
+            if (confirm('Biztosan törölsz MINDEN tételt?\n\n⚠️ A fiók nevek megmaradnak!\n\nEz nem visszavonható!')) {
+                items = [];
+                saveData();
+                renderItems();
+                alert('Minden tétel törölve! A fiók nevek megmaradtak.');
+            }
+        });
+
+        // Filters
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderItems();
+        });
+
+        // Stat kártyák szűrő funkció
+        document.querySelectorAll('.stat-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const filter = card.getAttribute('data-filter');
+                
+                // Active állapot kezelése
+                document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+                document.getElementById('filterAll').classList.remove('active');
+                card.classList.add('active');
+                
+                filterType = filter;
+                renderItems();
+            });
+        });
+
+        // Összes gomb
+        document.getElementById('filterAll').addEventListener('click', () => {
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+            document.getElementById('filterAll').classList.add('active');
+            filterType = '';
+            renderItems();
+        });
+
+        // Get Expiry Status
+        function getExpiryStatus(expiry) {
+            if (!expiry) return 'unknown';
+            
+            const today = new Date();
+            const expiryDate = new Date(expiry);
+            const diffDays = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return 'expired';
+            if (diffDays <= 30) return 'warning';
+            return 'ok';
+        }
+
+        // Format Date
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Nincs megadva';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('hu-HU');
+        }
+
+        // Render Items
+        function renderItems() {
+            const itemList = document.getElementById('itemList');
+            
+            let filtered = items.filter(item => {
+                if (searchQuery && !item.name.toLowerCase().includes(searchQuery)) {
+                    return false;
+                }
+                if (filterType && item.type !== filterType) {
+                    return false;
+                }
+                return true;
+            });
+
+            // Sort by expiry date
+            filtered.sort((a, b) => {
+                if (!a.expiry) return 1;
+                if (!b.expiry) return -1;
+                return new Date(a.expiry) - new Date(b.expiry);
+            });
+
+            if (filtered.length === 0) {
+                itemList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Nincs találat</p>
+                    </div>
+                `;
+            } else {
+                const typeIcons = {
+                    'zoldseg': '🥬',
+                    'hus': '🥩',
+                    'hal': '🐟',
+                    'tejtermek': '🍰',
+                    'pekaru': '🥖',
+                    'egyeb': '📦'
+                };
+                
+                itemList.innerHTML = filtered.map(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    const typeIcon = typeIcons[item.type] || '📦';
+                    
+                    return `
+                        <div class="item-card" data-type="${item.type}">
+                            <div class="item-location">${typeIcon} ${item.fagyaszto} - ${item.fiok}</div>
+                            <div class="item-header">
+                                <div>
+                                    <div class="item-name">${item.name}</div>
+                                    ${item.note ? `<div class="item-info">💬 ${item.note}</div>` : ''}
+                                    ${item.expiry ? `<div class="item-date date-${status}">📅 ${formatDate(item.expiry)}</div>` : ''}
+                                </div>
+                                <div class="item-actions">
+                                    <button class="item-btn" onclick="openItemModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">✏️</button>
+                                    <button class="item-btn" onclick="deleteItem(${item.id})">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateStats();
+        }
+
+        // Update Stats
+        function updateStats() {
+            const stat1 = items.filter(i => i.type === 'zoldseg').length;
+            const stat2 = items.filter(i => i.type === 'hus').length;
+            const stat3 = items.filter(i => i.type === 'hal').length;
+            const stat4 = items.filter(i => i.type === 'tejtermek').length;
+            const stat5 = items.filter(i => i.type === 'pekaru').length;
+            const stat6 = items.filter(i => i.type === 'egyeb').length;
+
+            document.getElementById('stat1').textContent = stat1;
+            document.getElementById('stat2').textContent = stat2;
+            document.getElementById('stat3').textContent = stat3;
+            document.getElementById('stat4').textContent = stat4;
+            document.getElementById('stat5').textContent = stat5;
+            document.getElementById('stat6').textContent = stat6;
+        }
+
+        // CSV Export - Tételek
+        document.getElementById('exportItemsBtn').addEventListener('click', () => {
+            if (items.length === 0) {
+                alert('Nincs exportálható tétel!');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const headers = ['fagyaszto', 'fiok', 'tipus', 'nev', 'datum', 'leiras'];
+            const rows = items.map(item => [
+                item.fagyaszto,
+                item.fiok,
+                item.type,
+                item.name,
+                item.expiry || '',
+                item.note || ''
+            ]);
+
+            const csv = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `fagyaszto_tetelek_${timestamp}.csv`;
+            link.click();
+        });
+
+        // CSV Export - Fióknevek
+        document.getElementById('exportDrawersBtn').addEventListener('click', () => {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const headers = ['fagyaszto', 'fiok_kod', 'fiok_nev'];
+            const rows = [];
+            
+            Object.keys(drawerNames).forEach(fagyaszto => {
+                drawerNames[fagyaszto].forEach((fiokNev, index) => {
+                    const defaultNev = DEFAULT_DRAWERS[fagyaszto][index];
+                    rows.push([fagyaszto, defaultNev, fiokNev]);
+                });
+            });
+
+            const csv = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `fagyaszto_fiokok_${timestamp}.csv`;
+            link.click();
+        });
+
+        // CSV Import - Tételek
+        document.getElementById('importItemsBtn').addEventListener('click', () => {
+            document.getElementById('csvItemsInput').click();
+        });
+
+        document.getElementById('csvItemsInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n').map(line => line.trim()).filter(line => line);
+                    
+                    const imported = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+                        if (values.length >= 4) {
+                            imported.push({
+                                id: Date.now() + Math.random(),
+                                fagyaszto: values[0],
+                                fiok: values[1],
+                                type: values[2] || 'egyeb',
+                                name: values[3],
+                                expiry: values[4] || null,
+                                note: values[5] || '',
+                                created: new Date().toISOString(),
+                                modified: new Date().toISOString()
+                            });
+                        }
+                    }
+
+                    if (confirm(`${imported.length} tétel importálása?\nA meglévő tételek felülíródnak!`)) {
+                        items = imported;
+                        saveData();
+                        renderItems();
+                        alert('Sikeres importálás!');
+                    }
+                } catch (error) {
+                    alert('Hiba az importálás során!\n' + error.message);
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            e.target.value = '';
+        });
+
+        // CSV Import - Fióknevek
+        document.getElementById('importDrawersBtn').addEventListener('click', () => {
+            document.getElementById('csvDrawersInput').click();
+        });
+
+        document.getElementById('csvDrawersInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n').map(line => line.trim()).filter(line => line);
+                    
+                    const importedDrawers = JSON.parse(JSON.stringify(DEFAULT_DRAWERS));
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+                        if (values.length >= 3) {
+                            const fagyaszto = values[0];
+                            const defaultNev = values[1];
+                            const customNev = values[2];
+                            
+                            if (importedDrawers[fagyaszto]) {
+                                const index = DEFAULT_DRAWERS[fagyaszto].indexOf(defaultNev);
+                                if (index !== -1) {
+                                    importedDrawers[fagyaszto][index] = customNev;
+                                }
+                            }
+                        }
+                    }
+
+                    if (confirm('Fióknevek importálása?\nA meglévő nevek felülíródnak!')) {
+                        drawerNames = importedDrawers;
+                        saveData();
+                        renderItems();
+                        alert('Sikeres importálás!');
+                    }
+                } catch (error) {
+                    alert('Hiba az importálás során!\n' + error.message);
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            e.target.value = '';
+        });
+
+        // Local Storage
+        function saveData() {
+            localStorage.setItem('fagyaszto_items', JSON.stringify(items));
+            localStorage.setItem('fagyaszto_drawers', JSON.stringify(drawerNames));
+        }
+
+        function loadData() {
+            const savedItems = localStorage.getItem('fagyaszto_items');
+            const savedDrawers = localStorage.getItem('fagyaszto_drawers');
+            
+            if (savedItems) {
+                items = JSON.parse(savedItems);
+            }
+            
+            if (savedDrawers) {
+                drawerNames = JSON.parse(savedDrawers);
+            }
+            
+            renderItems();
+        }
+
+        // Init
+        loadData();
+    </script>
+</body>
+</html>
